@@ -119,6 +119,7 @@ convert_maven_project() {
       cd $root
       python3 insert_xml.py --pom_file_path=${java_packages}/${short_package_name}/pom.xml
     done
+    mv $java_packages/ $PWD/multiple-languages/java
 }
 
 

@@ -28,6 +28,16 @@ def write_xml():
     repository_node.appendChild(repository_id_node)
     repository_node.appendChild(repository_url_node)
     repositories_node.appendChild(repository_node)
+    repository_node_2 = dom_tree.createElement("repository")
+    repository_id_node_2 = dom_tree.createElement("id")
+    repository_id_text_value_2 = dom_tree.createTextNode("sonatype-nexus-snapshots")
+    repository_id_node_2.appendChild(repository_id_text_value_2)
+    repository_url_node_2 = dom_tree.createElement("url")
+    repository_url_text_value_2 = dom_tree.createTextNode("https://oss.sonatype.org/content/repositories/snapshots")
+    repository_url_node_2.appendChild(repository_url_text_value_2)
+    repository_node_2.appendChild(repository_id_node_2)
+    repository_node_2.appendChild(repository_url_node_2)
+    repositories_node.appendChild(repository_node_2)
     root_node.appendChild(repositories_node)
 
     # write distributionManagement
