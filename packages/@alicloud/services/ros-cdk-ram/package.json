@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-ram"
         }
+      },
+      "python": {
+        "module": "ros_cdk_ram",
+        "distName": "ros-cdk-ram",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },

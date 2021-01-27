@@ -72,18 +72,27 @@ export async function execProgram(config: Configuration): Promise<cxapi.CloudAss
 
     let pkgInfoPath;
 
-    if(fs.existsSync('./package.json')) {
+    if(fs.existsSync('./tsconfig.json')) {
       // when using ts to synth
       pkgInfoPath = './package.json';
       const binDir = curPath + '/bin';
       const libDir = curPath + '/lib';
       await readDirForMd5(binDir);
       await readDirForMd5(libDir);
-    } else {
+    }
+    else if(fs.existsSync('./requirements.txt')) {
+      // when using python to synth
+      pkgInfoPath = './requirements.txt';
+      await readDirForMd5(curPath);
+    }
+    else if (fs.existsSync('./pom.xml')) {
       // when using java to synth
       pkgInfoPath = './pom.xml';
       const srcDir = curPath + '/src';
       await readDirForMd5(srcDir);
+    }
+    else {
+      throw new Error('This CDK CLI init project is not allowed, please check project directory information');
     }
     
 

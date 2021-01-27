@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-foas"
         }
+      },
+      "python": {
+        "module": "ros_cdk_foas",
+        "distName": "ros-cdk-foas",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },

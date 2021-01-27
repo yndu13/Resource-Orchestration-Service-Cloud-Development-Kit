@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-resourcemanager"
         }
+      },
+      "python": {
+        "module": "ros_cdk_resourcemanager",
+        "distName": "ros-cdk-resourcemanager",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },

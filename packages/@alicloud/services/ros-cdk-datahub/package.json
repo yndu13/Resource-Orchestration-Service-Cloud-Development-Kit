@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-datahub"
         }
+      },
+      "python": {
+        "module": "ros_cdk_datahub",
+        "distName": "ros-cdk-datahub",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },

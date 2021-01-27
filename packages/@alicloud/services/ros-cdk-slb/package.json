@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-slb"
         }
+      },
+      "python": {
+        "module": "ros_cdk_slb",
+        "distName": "ros-cdk-slb",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },
