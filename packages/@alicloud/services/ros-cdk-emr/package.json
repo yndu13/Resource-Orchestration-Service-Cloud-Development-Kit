@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-emr"
         }
+      },
+      "python": {
+        "module": "ros_cdk_emr",
+        "distName": "ros-cdk-emr",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },

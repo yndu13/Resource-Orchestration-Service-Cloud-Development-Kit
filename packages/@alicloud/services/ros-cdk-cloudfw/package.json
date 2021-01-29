@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-cloudfw"
         }
+      },
+      "python": {
+        "module": "ros_cdk_cloudfw",
+        "distName": "ros-cdk-cloudfw",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },

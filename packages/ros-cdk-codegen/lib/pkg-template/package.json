@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "replace-content"
         }
+      },
+      "python": {
+        "module": "replace-content",
+        "distName": "replace-content",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },

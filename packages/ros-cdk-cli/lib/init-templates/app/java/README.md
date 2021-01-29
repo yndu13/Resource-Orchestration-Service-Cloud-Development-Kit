@@ -17,5 +17,6 @@ It is a [Maven](https://maven.apache.org/) based project, so you can open this p
  * `ros-cdk diff`          compare deployed stack with current state
  * `ros-cdk synth`         emits the synthesized ROS template
  * `ros-cdk destroy`       Deletes a stack from an ALIYUN account
+ * `mvn test`              perform the maven unit tests
 
 Enjoy!

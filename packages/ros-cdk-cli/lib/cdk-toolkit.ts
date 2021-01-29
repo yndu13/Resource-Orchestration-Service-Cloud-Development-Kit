@@ -6,6 +6,7 @@ import { decipher, cipher } from './util/cipher';
 import { format } from 'util';
 const rosClient = require('@alicloud/ros-2019-09-10');
 const os = require('os');
+import { exec as _exec } from 'child_process';
 import Credentials, { Config } from '@alicloud/credentials';
 import { CloudAssembly, DefaultSelection, ExtendedStackSelection, StackCollection } from './api/cloud-assembly';
 import { CloudExecutable } from './api/cloud-executable';
@@ -14,6 +15,7 @@ import { Configuration } from './settings';
 import { exit } from 'process';
 import { printStackDiff } from './diff';
 import { deserializeStructure } from './serialize';
+import { promisify } from 'util';
 
 const CONFIG_NAME = 'account.config.json';
 const LOCAL_PATH = './';
@@ -25,6 +27,8 @@ const INIT_STACK = 'init';
 const SYNTH_STACK = 'synth';
 const DEPLOY_STACK = 'deploy';
 const DESTROY_STACK = 'destroy';
+
+const exec = promisify(_exec);
 
 export interface CdkToolkitProps {
   /**
@@ -88,23 +92,69 @@ export class CdkToolkit {
   constructor(private readonly props: CdkToolkitProps) {}
 
   public async getRosClient() {
-    let accessKeyId = await decipher(await CdkToolkit.getJson(CONFIG_NAME, 'accessKeyId'));
-    let accessKeySecret = await decipher(await CdkToolkit.getJson(CONFIG_NAME, 'accessKeySecret'));
-    let securityToken = await CdkToolkit.getJson(CONFIG_NAME, 'securityToken', true);
+    let modeType = await CdkToolkit.getJson(CONFIG_NAME, 'type')
+    let endpoint = await CdkToolkit.getJson(CONFIG_NAME, 'endpoint')
+    let configInfo: any = {};
     let client;
-    if (!securityToken) {
+    switch (modeType){
+      case 'ecs_ram_role':
+        configInfo = new Config({
+          type: 'ecs_ram_role',
+          roleName: await CdkToolkit.getJson(CONFIG_NAME, 'roleName')
+        });
+        break;
+      case 'sts':
+        configInfo = new Config({
+          type: 'sts',
+          accessKeyId: await decipher(await CdkToolkit.getJson(CONFIG_NAME, 'accessKeyId')),
+          accessKeySecret: await decipher(await CdkToolkit.getJson(CONFIG_NAME, 'accessKeySecret')),
+          securityToken: await decipher(await CdkToolkit.getJson(CONFIG_NAME, 'securityToken'))
+        });
+        break;
+      case 'ram_role_arn':
+        configInfo = new Config({
+          type: 'ram_role_arn',
+          accessKeyId:  await decipher(await CdkToolkit.getJson(CONFIG_NAME, 'accessKeyId')),
+          accessKeySecret:  await decipher(await CdkToolkit.getJson(CONFIG_NAME, 'accessKeySecret')),
+          roleArn: await CdkToolkit.getJson(CONFIG_NAME, 'roleArn'),
+          roleSessionName: await CdkToolkit.getJson(CONFIG_NAME, 'roleSessionName')
+        });
+        break;
+      case 'access_key':
+        configInfo = new Config({
+          type: 'access_key',
+          accessKeyId: await decipher(await CdkToolkit.getJson(CONFIG_NAME, 'accessKeyId')),
+          accessKeySecret: await decipher(await CdkToolkit.getJson(CONFIG_NAME, 'accessKeySecret'))
+        });
+        break;
+    }
+    let newAccessKeyId;
+    let newAccessKeySecret;
+    let newSecurityToken;
+    const cred = new Credentials(configInfo);
+    try {
+      newAccessKeyId = await cred.getAccessKeyId();
+      newAccessKeySecret = await cred.getAccessKeySecret();
+      newSecurityToken = await cred.getSecurityToken();
+    } catch (e) {
+      error(
+        'WANRNING: Please check the accuracy of the credential information you import from CLI config!' + e.message,
+      );
+      exit();
+    }
+    if (!newSecurityToken) {
       client = new rosClient({
-        endpoint: await CdkToolkit.getJson(CONFIG_NAME, 'endpoint'),
-        accessKeyId: accessKeyId,
-        accessKeySecret: accessKeySecret
+        endpoint: endpoint,
+        accessKeyId: newAccessKeyId,
+        accessKeySecret: newAccessKeySecret
       });
     }
     else {
       client = new rosClient({
-        endpoint: await CdkToolkit.getJson(CONFIG_NAME, 'endpoint'),
-        accessKeyId: accessKeyId,
-        accessKeySecret: accessKeySecret,
-        securityToken: await decipher(securityToken)
+        endpoint: endpoint,
+        accessKeyId: newAccessKeyId,
+        accessKeySecret: newAccessKeySecret,
+        securityToken: newSecurityToken
       });
     }
     return client;
@@ -116,50 +166,71 @@ export class CdkToolkit {
     let endpoint = readlineSync.question('endpoint(optional, default:https://ros.aliyuncs.com):',{defaultInput: 'https://ros.aliyuncs.com'});
     let regionId = readlineSync.question('defaultRegionId(optional, default:cn-hangzhou):', {defaultInput: 'cn-hangzhou'});
     let modeIndex = readlineSync.keyInSelect(modeType,'Authenticate mode:');
-    let inputConfigInfo;
-    let newAccessKeyId;
-    let newAccessKeySecret;
-    let newSecurityToken;
-    let configInfo: any = {};
+    let inputConfigInfo: any = {};
+    let checkCommand: string;
+    let curlCommand: string;
     if (modeType[modeIndex] === 'EcsRamRole'){
-      let roleName = readlineSync.question('roleName:');
-      inputConfigInfo = new Config({
-        type: 'ecs_ram_role',
-        roleName: roleName
-      });
+        if (process.platform === 'win32') {
+          checkCommand = 'powershell -Command "(curl -URi http://100.100.100.200/latest/meta-data/Ram/security-credentials/).StatusCode"';
+          curlCommand = 'powershell -Command "(curl -URi http://100.100.100.200/latest/meta-data/Ram/security-credentials/).Content"';
+        }
+        else{
+          checkCommand = 'curl http://100.100.100.200/latest/meta-data/Ram/security-credentials/ -o /dev/null -s -w %{http_code}';
+          curlCommand = 'curl http://100.100.100.200/latest/meta-data/Ram/security-credentials/';
+        }
+        try {
+          const { stdout: checkStdout } = await exec(checkCommand);
+          if (checkStdout.trim() !== '200'){
+            error(
+              'WANRNING: If want to Use EcsRamRole config, Please bind EcsRamRole to the host.',
+            );
+            exit();
+          }
+        } catch (e) {
+          error(
+            'WANRNING: If want to Use EcsRamRole config, Please bind EcsRamRole to the host!' + e.message,
+          );
+          exit();
+        }
+        const { stdout: curlStdout } = await exec(curlCommand);
+        let roleName = readlineSync.question(`roleName, The configured role of the host: [${curlStdout.trim()}]`,{defaultInput: curlStdout.trim()});
+        inputConfigInfo = {
+          type: 'ecs_ram_role',
+          roleName: roleName
+        };
     }
     else if (modeType[modeIndex] === 'StsToken'){
       let accessKeyId = readlineSync.question('accessKeyId:', {hideEchoBack: true});
       let accessKeySecret = readlineSync.question('accessKeySecret:', {hideEchoBack: true});
       let securityToken = readlineSync.question('securityToken:', {hideEchoBack: true});
-      inputConfigInfo = new Config({
+      inputConfigInfo = {
         type: 'sts',
-        accessKeyId: accessKeyId,
-        accessKeySecret: accessKeySecret,
-        securityToken: securityToken
-      });
+        accessKeyId:  await cipher(accessKeyId),
+        accessKeySecret:  await cipher(accessKeySecret),
+        securityToken:  await cipher(securityToken)
+      };
     }
     else if (modeType[modeIndex] === 'RamRoleArn'){
       let accessKeyId = readlineSync.question('accessKeyId:', {hideEchoBack: true});
       let accessKeySecret = readlineSync.question('accessKeySecret:', {hideEchoBack: true});
       let roleArn = readlineSync.question('roleArn(eg: acs:ram::******:role/******):');
       let roleSessionName = readlineSync.question('roleSessionName:');
-      inputConfigInfo = new Config({
+      inputConfigInfo = {
         type: 'ram_role_arn',
-        accessKeyId: accessKeyId,
-        accessKeySecret: accessKeySecret,
+        accessKeyId:  await cipher(accessKeyId),
+        accessKeySecret:  await cipher(accessKeySecret),
         roleArn: roleArn,
         roleSessionName: roleSessionName
-      });
+      };
     }
     else if (modeType[modeIndex] === 'AK') {
       let accessKeyId = readlineSync.question('accessKeyId:', {hideEchoBack: true});
       let accessKeySecret = readlineSync.question('accessKeySecret:', {hideEchoBack: true});
-      inputConfigInfo = new Config({
+      inputConfigInfo = {
         type: 'access_key',
-        accessKeyId: accessKeyId,
-        accessKeySecret: accessKeySecret
-      });
+        accessKeyId:  await cipher(accessKeyId),
+        accessKeySecret:  await cipher(accessKeySecret)
+      };
     }
     else {
       error(
@@ -167,28 +238,10 @@ export class CdkToolkit {
       );
       exit();
     }
-    const cred = new Credentials(inputConfigInfo);
-    try {
-      newAccessKeyId = await cred.getAccessKeyId();
-      newAccessKeySecret = await cred.getAccessKeySecret();
-      newSecurityToken = await cred.getSecurityToken();
-    } catch (e) {
-      error(
-        'WANRNING: Please check the accuracy of the certification information entered!' + e.message,
-      );
-      exit();
-    }
-    configInfo = {
-      endpoint: endpoint,
-      regionId: regionId,
-      accessKeyId: await cipher(newAccessKeyId),
-      accessKeySecret: await cipher(newAccessKeySecret)
-    };
-    if (newSecurityToken) {
-      configInfo.securityToken = await cipher(newSecurityToken)
-    }
+    inputConfigInfo.endpoint = endpoint
+    inputConfigInfo.regionId = regionId
     let file = path.join(configSavePath);
-    fs.writeFileSync(file, JSON.stringify(configInfo, null, '\t'));
+    fs.writeFileSync(file, JSON.stringify(inputConfigInfo, null, '\t'));
     success(`\n ✅ Your cdk configuration has been saved successfully!`);
   }
 
@@ -226,72 +279,73 @@ export class CdkToolkit {
     }
     let endpoint = await CdkToolkit.getJson(CONFIG_NAME, 'endpoint', true)
     let regionId;
-    let configInfo;
-    let newAccessKeyId;
-    let newAccessKeySecret;
-    let newSecurityToken;
-    let newConfig: any = {};
+    let configInfo: any = {};
     endpoint = endpoint ? endpoint : 'https://ros.aliyuncs.com';
     switch (modeType[modeIndex]){
       case 'AK':
         profileConfig = configureInfos.AK.find((profiles: { name: string; }) => profiles.name === profileNames[profileIndex]);
-        configInfo = new Config({
+        if (!profileConfig['accessKeyId'] || !profileConfig['accessKeySecret']) {
+          error(
+            'WANRNING: If want to deploy or delete stack, accessKeyId or accessKeySecret Cannot be empty!',
+          );
+          exit();
+        }
+        configInfo = {
           type: 'access_key',
-          accessKeyId: profileConfig['accessKeyId'],
-          accessKeySecret: profileConfig['accessKeySecret']
-        });
+          accessKeyId: await cipher(profileConfig['accessKeyId']),
+          accessKeySecret: await cipher(profileConfig['accessKeySecret'])
+        };
         break;
       case 'StsToken':
         profileConfig = configureInfos.StsToken.find((profiles: { name: string; }) => profiles.name === profileNames[profileIndex]);
-        configInfo = new Config({
+        if (!profileConfig['accessKeyId'] || !profileConfig['accessKeySecret'] || ! profileConfig['securityToken']) {
+          error(
+            'WANRNING: If want to deploy or delete stack, accessKeyId, accessKeySecret or securityToken Cannot be empty!',
+          );
+          exit();
+        }
+        configInfo = {
           type: 'sts',
-          accessKeyId: profileConfig['accessKeyId'],
-          accessKeySecret: profileConfig['accessKeySecret'],
-          securityToken: profileConfig['securityToken']
-        });
+          accessKeyId: await cipher(profileConfig['accessKeyId']),
+          accessKeySecret: await cipher(profileConfig['accessKeySecret']),
+          securityToken: await cipher(profileConfig['securityToken'])
+        };
         break;
       case 'RamRoleArn':
         profileConfig = configureInfos.RamRoleArn.find((profiles: { name: string; }) => profiles.name === profileNames[profileIndex]);
-        configInfo = new Config({
+        if (!profileConfig['accessKeyId'] || !profileConfig['accessKeySecret'] || !profileConfig['roleArn'] || !profileConfig['roleSessionName']) {
+          error(
+            'WANRNING: If want to deploy or delete stack, accessKeyId, accessKeySecret, roleArn or roleSessionName Cannot be empty!',
+          );
+          exit();
+        }
+        configInfo = {
           type: 'ram_role_arn',
-          accessKeyId: profileConfig['accessKeyId'],
-          accessKeySecret: profileConfig['accessKeySecret'],
+          accessKeyId: await cipher(profileConfig['accessKeyId']),
+          accessKeySecret: await cipher(profileConfig['accessKeySecret']),
           roleArn: profileConfig['roleArn'],
           roleSessionName: profileConfig['roleSessionName']
-        });
+        };
         break;
       case 'EcsRamRole':
         profileConfig = configureInfos.EcsRamRole.find((profiles: { name: string; }) => profiles.name === profileNames[profileIndex]);
-        configInfo = new Config({
+        if (!profileConfig['roleName']) {
+          error(
+            'WANRNING: If want to deploy or delete stack, roleName Cannot be empty!',
+          );
+          exit();
+        }
+        configInfo = {
           type: 'ecs_ram_role',
           roleName: profileConfig['roleName']
-        });
+        };
         break;
     }
     regionId = profileConfig['region'] ? profileConfig['region'] :'cn-hangzhou';
-    const cred = new Credentials(configInfo);
-    try {
-      newAccessKeyId = await cred.getAccessKeyId();
-      newAccessKeySecret = await cred.getAccessKeySecret();
-      newSecurityToken = await cred.getSecurityToken();
-    } catch (e) {
-      error(
-        'WANRNING: Please check the accuracy of the credential information you import from CLI config!' + e.message,
-      );
-      exit();
-    }
-
-    newConfig = {
-      accessKeyId: await cipher(newAccessKeyId),
-      accessKeySecret: await cipher(newAccessKeySecret),
-      endpoint: endpoint,
-      regionId: regionId
-    }
-    if (newSecurityToken){
-      newConfig.securityToken = await cipher(newSecurityToken)
-    }
+    configInfo.regionId = regionId
+    configInfo.endpoint = endpoint
     let file = path.join(configSavePath);
-    fs.writeFileSync(file, JSON.stringify(newConfig, null, '\t'));
+    fs.writeFileSync(file, JSON.stringify(configInfo, null, '\t'));
     success(`\n ✅ Your cdk configuration has been load from Aliyun Cli configuration saved successfully %s %s!`, modeType[modeIndex], profileNames[profileIndex]);
   }
 
@@ -442,11 +496,16 @@ export class CdkToolkit {
   }
 
   public async event(options: EventOptions){
+    await this.syncStackInfo();
+    let stacks = await this.selectStacksForDestroy([]);
     if(!options.stackName){
       error('If want to get resource stack events, stack name must be Specified!')
       exit()
     }
-    await this.syncStackInfo();
+    if(!stacks.stackIds.includes(options.stackName[0])){
+      error(`The specific stack doesn't exist, Please check the accuracy of the input stack name!`)
+      exit()
+    }
     let LogicalResourceIds:  string[] = [];
     const client = await this.getRosClient();
     if (options.logicalResourceId){

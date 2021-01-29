@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-marketplace"
         }
+      },
+      "python": {
+        "module": "ros_cdk_marketplace",
+        "distName": "ros-cdk-marketplace",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },

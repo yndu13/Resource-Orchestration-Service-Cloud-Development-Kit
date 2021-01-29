@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-pvtz"
         }
+      },
+      "python": {
+        "module": "ros_cdk_pvtz",
+        "distName": "ros-cdk-pvtz",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },

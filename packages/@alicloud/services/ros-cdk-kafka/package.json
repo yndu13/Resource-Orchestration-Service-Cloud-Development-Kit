@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-kafka"
         }
+      },
+      "python": {
+        "module": "ros_cdk_kafka",
+        "distName": "ros-cdk-kafka",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },

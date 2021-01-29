@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-memcache"
         }
+      },
+      "python": {
+        "module": "ros_cdk_memcache",
+        "distName": "ros-cdk-memcache",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },

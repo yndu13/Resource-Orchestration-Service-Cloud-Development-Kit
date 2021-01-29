@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-rds"
         }
+      },
+      "python": {
+        "module": "ros_cdk_rds",
+        "distName": "ros-cdk-rds",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },

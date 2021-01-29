@@ -19,6 +19,13 @@
           "groupId": "com.aliyun",
           "artifactId": "ros-cdk-rocketmq"
         }
+      },
+      "python": {
+        "module": "ros_cdk_rocketmq",
+        "distName": "ros-cdk-rocketmq",
+        "classifiers": [
+          "Programming Language :: Python :: 3"
+        ]
       }
     }
   },
