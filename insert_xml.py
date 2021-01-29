@@ -160,6 +160,16 @@ def write_xml():
             plugin_execution_node.appendChild(plugin_execution_configuration_node)
             plugin_executions_node.appendChild(plugin_execution_node)
             new_plugin_id_node.appendChild(plugin_executions_node)
+        if artifact_id_node.childNodes[0].data == "maven-javadoc-plugin":
+            new_plugin_id_node_2 = artifact_id_node.parentNode
+            for childNode in new_plugin_id_node_2.childNodes:
+                if childNode.nodeName == "configuration":
+                    doclint_node = dom_tree.createElement("doclint")
+                    doclint_node_text_value = dom_tree.createTextNode("none")
+                    doclint_node.appendChild(doclint_node_text_value)
+                    childNode.appendChild(doclint_node)
+
+
 
     with open(pom_file_path, 'w') as f:
         dom_tree.writexml(f, addindent=' ', newl='\t', encoding='utf-8')
