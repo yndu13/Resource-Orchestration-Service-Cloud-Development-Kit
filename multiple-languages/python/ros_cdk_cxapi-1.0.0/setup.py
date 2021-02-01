@@ -4,7 +4,7 @@ import setuptools
 kwargs = json.loads(
     """
 {
-    "name": "ros_cdk_assembly_schema",
+    "name": "ros_cdk_cxapi",
     "version": "1.0.0",
     "description": "",
     "license": "Apache-2.0",
@@ -21,21 +21,22 @@ kwargs = json.loads(
         "": "src"
     },
     "packages": [
-        "ros_cdk_assembly_schema",
-        "ros_cdk_assembly_schema._jsii"
+        "ros_cdk_cxapi",
+        "ros_cdk_cxapi._jsii"
     ],
     "package_data": {
-        "ros_cdk_assembly_schema._jsii": [
-            "ros-cdk-assembly-schema@1.0.0.jsii.tgz"
+        "ros_cdk_cxapi._jsii": [
+            "ros-cdk-cxapi@1.0.0.jsii.tgz"
         ],
-        "ros_cdk_assembly_schema": [
+        "ros_cdk_cxapi": [
             "py.typed"
         ]
     },
     "python_requires": ">=3.6",
     "install_requires": [
         "jsii>=1.17.1, <2.0.0",
-        "publication>=0.0.3"
+        "publication>=0.0.3",
+        "ros_cdk_assembly_schema>=1.0.0, <2.0.0"
     ],
     "classifiers": [
         "Intended Audience :: Developers",

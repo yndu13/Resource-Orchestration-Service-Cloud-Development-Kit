@@ -8,11 +8,10 @@ import jsii
 import publication
 import typing_extensions
 
+import ros_cdk_assembly_schema._jsii
+
 __jsii_assembly__ = jsii.JSIIAssembly.load(
-    "@alicloud/ros-cdk-assembly-schema",
-    "1.0.0",
-    __name__[0:-6],
-    "ros-cdk-assembly-schema@1.0.0.jsii.tgz",
+    "@alicloud/ros-cdk-cxapi", "1.0.0", __name__[0:-6], "ros-cdk-cxapi@1.0.0.jsii.tgz"
 )
 
 __all__ = [
