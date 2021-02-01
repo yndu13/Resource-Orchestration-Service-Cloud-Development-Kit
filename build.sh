@@ -91,6 +91,38 @@ spec2ts() {
     cd $root
 }
 
+convert_maven_project() {
+    root=$PWD
+    dist_dir="$PWD/dist"
+    if [ ! -d "$dist_dir" ]; then
+        echo "directory $dist_dir not found"
+        exit 1
+    fi
+
+    java_dir="$dist_dir/java/com/aliyun"
+
+    java_packages="$dist_dir/java/com/aliyun/packages"
+    rm -rf  $java_packages
+    mkdir -p $java_packages
+
+    for jar in $(find $java_dir -name "*-sources.jar"); do
+      long_package_name=${jar#*aliyun/}
+      short_package_name=${long_package_name%%/*}
+      mkdir -p ${java_packages}/${short_package_name}/
+      cp -r $jar ${java_packages}/${short_package_name}/
+      cd ${java_packages}/${short_package_name}/
+      jar xvf ${java_packages}/${short_package_name}/*.jar
+      mkdir -p ${java_packages}/${short_package_name}/src/main/java
+      mv com/ ${java_packages}/${short_package_name}/src/main/java
+      cp META-INF/maven/com.aliyun/${short_package_name}/pom.xml ${java_packages}/${short_package_name}/
+      rm -rf *.jar META-INF/
+      cd $root
+      python3 insert_xml.py --pom_file_path=${java_packages}/${short_package_name}/pom.xml
+    done
+    rm -rf $PWD/multiple-languages/java
+    mv ${java_packages}/ $PWD/multiple-languages/java
+}
+
 
 jsii_pack() {
     export PATH=$PWD/node_modules/.bin:$PATH
@@ -193,6 +225,9 @@ case "$ACTION" in
     ;;
     copy-js)
         copy_js
+    ;;
+    convert-maven-project)
+          convert_maven_project
     ;;
     *)
         usage
