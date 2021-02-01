@@ -4,9 +4,9 @@ import setuptools
 kwargs = json.loads(
     """
 {
-    "name": "ros_cdk_core",
+    "name": "ros_cdk_ecs",
     "version": "1.0.0",
-    "description": "",
+    "description": "ros-cdk-ecs package used for AliCloud ROS",
     "license": "Apache-2.0",
     "url": "",
     "long_description_content_type": "text/markdown",
@@ -15,20 +15,20 @@ kwargs = json.loads(
         "universal": true
     },
     "project_urls": {
-        "Source": "https://github.com/aliyun/Resource-Orchestration-Service-Cloud-Development-Kit.git"
+        "Source": ""
     },
     "package_dir": {
         "": "src"
     },
     "packages": [
-        "ros_cdk_core",
-        "ros_cdk_core._jsii"
+        "ros_cdk_ecs",
+        "ros_cdk_ecs._jsii"
     ],
     "package_data": {
-        "ros_cdk_core._jsii": [
-            "ros-cdk-core@1.0.0.jsii.tgz"
+        "ros_cdk_ecs._jsii": [
+            "ros-cdk-ecs@1.0.0.jsii.tgz"
         ],
-        "ros_cdk_core": [
+        "ros_cdk_ecs": [
             "py.typed"
         ]
     },
@@ -37,8 +37,7 @@ kwargs = json.loads(
         "constructs>=3.0.4, <4.0.0",
         "jsii>=1.17.1, <2.0.0",
         "publication>=0.0.3",
-        "ros_cdk_assembly_schema>=1.0.0, <2.0.0",
-        "ros_cdk_cxapi>=1.0.0, <2.0.0"
+        "ros_cdk_core>=1.0.0, <2.0.0"
     ],
     "classifiers": [
         "Intended Audience :: Developers",
