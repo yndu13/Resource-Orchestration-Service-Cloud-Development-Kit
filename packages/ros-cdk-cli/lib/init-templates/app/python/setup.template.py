@@ -31,7 +31,6 @@ setuptools.setup(
 
         "License :: OSI Approved :: Apache Software License",
 
-        "Programming Language :: JavaScript",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",

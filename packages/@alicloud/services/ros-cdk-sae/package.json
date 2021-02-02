@@ -34,7 +34,7 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/aliyun/Resource-Orchestration-Service-Cloud-Development-Kit.git"
   },
   "scripts": {
     "build": "tsc",
