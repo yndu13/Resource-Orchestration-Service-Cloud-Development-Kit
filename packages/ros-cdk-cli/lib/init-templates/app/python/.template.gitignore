@@ -8,3 +8,7 @@ __pycache__
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+# Account config and stack info
+./account.config.json
+./stack.info.json
